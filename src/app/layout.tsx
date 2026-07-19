@@ -2,15 +2,14 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DarkcraneStore - 极速专线拼车平台",
-  description:
-    "赛博朋克风格的 VPS 拼车服务，支持精品专线、家宽出口和 USDT 支付。",
-  keywords: ["VPS", "专线", "拼车", "家宽", "USDT"],
-  authors: [{ name: "Darkcrane" }],
+  title: "DarkcraneStore - 霓虹拼车局",
+  description: "赛博朋克风格 VPS 拼车平台。精品线路，按位出发，随上随走。",
+  generator: "v0.app",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070714",
+  colorScheme: "dark",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -19,10 +18,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="h-full">
-      <body className="min-h-full flex flex-col bg-[var(--color-dark-base)] text-[var(--color-text-primary)] antialiased">
-        {children}
-      </body>
+    <html lang="zh-CN" className="bg-black">
+      <body className="bg-black font-sans antialiased">{children}</body>
     </html>
   );
 }

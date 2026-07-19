@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+/* DarkcraneStore - Cyberpunk Design System */
+
+@theme inline {
+  --color-neon-cyan: #00f5ff;
+  --color-neon-pink: #ff2d78;
+  --color-neon-purple: #bf5af2;
+  --color-neon-yellow: #ffd60a;
+  --color-neon-green: #30d158;
+
+  --color-dark-base: #070714;
+  --color-dark-900: #0d0d24;
+  --color-dark-800: #13132e;
+  --color-dark-700: #1a1a3e;
+  --color-dark-600: #222258;
+
+  --color-glass-border: rgba(0, 245, 255, 0.15);
+  --color-glass-bg: rgba(13, 13, 36, 0.55);
+
+  --color-text-primary: #e8eaff;
+  --color-text-secondary: rgba(232, 234, 255, 0.6);
+  --color-text-muted: rgba(232, 234, 255, 0.35);
+
+  --font-sans: "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    overflow-x: hidden;
+    background-color: var(--color-dark-base);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.2;
+  }
+
+  a {
+    color: var(--color-neon-cyan);
+    text-decoration: none;
+    transition:
+      color 0.2s ease,
+      text-shadow 0.2s ease;
+  }
+
+  a:hover {
+    color: #fff;
+    text-shadow: 0 0 12px var(--color-neon-cyan);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-dark-800);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background: var(--color-neon-cyan);
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    border: 1px solid var(--color-glass-border);
+    border-radius: 8px;
+    background: var(--color-glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .neon-text-cyan {
+    color: var(--color-neon-cyan);
+    text-shadow:
+      0 0 8px var(--color-neon-cyan),
+      0 0 20px rgba(0, 245, 255, 0.5);
+  }
+
+  .neon-text-pink {
+    color: var(--color-neon-pink);
+    text-shadow:
+      0 0 8px var(--color-neon-pink),
+      0 0 20px rgba(255, 45, 120, 0.5);
+  }
+
+  .neon-border-cyan {
+    border: 1px solid var(--color-neon-cyan);
+    box-shadow:
+      0 0 8px rgba(0, 245, 255, 0.4),
+      inset 0 0 8px rgba(0, 245, 255, 0.05);
+  }
+
+  .neon-border-pink {
+    border: 1px solid var(--color-neon-pink);
+    box-shadow:
+      0 0 8px rgba(255, 45, 120, 0.4),
+      inset 0 0 8px rgba(255, 45, 120, 0.05);
+  }
+
+  .btn-neon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    background: linear-gradient(
+      135deg,
+      var(--color-neon-cyan),
+      var(--color-neon-purple)
+    );
+    box-shadow:
+      0 0 16px rgba(0, 245, 255, 0.4),
+      0 4px 20px rgba(0, 0, 0, 0.5);
+    color: #000;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    transition:
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .btn-neon:hover {
+    box-shadow:
+      0 0 28px rgba(0, 245, 255, 0.7),
+      0 8px 32px rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px) scale(1.02);
+  }
+
+  .btn-neon:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-neon-cyan);
+    border-radius: 8px;
+    padding: 11px 27px;
+    background: transparent;
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.2);
+    color: var(--color-neon-cyan);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    transition:
+      background 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .btn-ghost:hover {
+    background: rgba(0, 245, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .synthwave-grid {
+    background-image:
+      linear-gradient(rgba(0, 245, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 245, 255, 0.08) 1px, transparent 1px);
+    background-position: center center;
+    background-size: 48px 48px;
+  }
+}
