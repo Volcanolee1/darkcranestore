@@ -122,7 +122,8 @@ export function Hero() {
             {/* CTA buttons */}
             <div className="flex flex-wrap gap-4 mt-2">
               <Link
-                href="/shop"
+                href="/quick-board"
+                prefetch={false}
                 className="inline-flex items-center gap-2 px-7 py-3 rounded-md font-semibold text-sm text-black bg-[#ff2d78] neon-glow-pink hover:bg-[#ff5090] transition-all duration-200"
                 onMouseEnter={handleButtonEnter}
                 onMouseLeave={handleButtonLeave}

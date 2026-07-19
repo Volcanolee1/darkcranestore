@@ -2,25 +2,52 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, Users, Gauge, Zap, ChevronRight } from "lucide-react"
-import { REGIONS, GRADES, VEHICLES, type Region, type Grade, type Vehicle } from "@/lib/shop-data"
-
-// ─── Step indicator ───────────────────────────────────────────────────────────
+import { ArrowLeft, ArrowRight, ChevronRight, Gauge, Users, Zap } from "lucide-react"
+import { GRADES, REGIONS, type Config, type Grade, type Region, type Vehicle, getVehicleSlug } from "@/lib/shop-data"
 
 const STEPS = ["目的地", "车辆级别", "选择车型", "车辆配置"]
 
-function StepBar({ step }: { step: number }) {
+type BreadcrumbItem = {
+  label: string
+  href?: string
+}
+
+export function ShopBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <div className="flex items-center gap-0 mb-10">
+    <nav aria-label="车型选购路径" className="mb-6 flex flex-wrap items-center gap-2 font-mono text-xs text-white/35">
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1
+
+        return (
+          <span key={`${item.label}-${index}`} className="flex items-center gap-2">
+            {item.href && !isLast ? (
+              <Link href={item.href} className="hover:text-white transition-colors">
+                {item.label}
+              </Link>
+            ) : (
+              <span className={isLast ? "text-white/75" : undefined}>{item.label}</span>
+            )}
+            {!isLast && <ChevronRight size={12} className="text-white/15" />}
+          </span>
+        )
+      })}
+    </nav>
+  )
+}
+
+export function StepBar({ step }: { step: number }) {
+  return (
+    <div className="mb-10 flex items-center gap-0 overflow-x-auto pb-2">
       {STEPS.map((label, i) => {
         const active = i === step
         const done = i < step
         const color = done || active ? "#ff2d78" : "rgba(255,255,255,0.15)"
+
         return (
-          <div key={i} className="flex items-center">
+          <div key={label} className="flex items-center">
             <div className="flex flex-col items-center gap-1.5">
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold transition-all duration-300"
+                className="flex h-7 w-7 items-center justify-center rounded-full font-mono text-xs font-bold transition-all duration-300"
                 style={{
                   background: done || active ? "#ff2d78" : "rgba(255,45,120,0.08)",
                   border: `1px solid ${color}`,
@@ -31,7 +58,7 @@ function StepBar({ step }: { step: number }) {
                 {done ? "✓" : i + 1}
               </div>
               <span
-                className="font-mono text-[10px] tracking-wider whitespace-nowrap"
+                className="whitespace-nowrap font-mono text-[10px] tracking-wider"
                 style={{ color: active ? "#ff2d78" : done ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.2)" }}
               >
                 {label}
@@ -39,7 +66,7 @@ function StepBar({ step }: { step: number }) {
             </div>
             {i < STEPS.length - 1 && (
               <div
-                className="w-16 h-px mx-2 mb-5 transition-all duration-300"
+                className="mx-2 mb-5 h-px w-16 shrink-0 transition-all duration-300"
                 style={{ background: done ? "#ff2d78" : "rgba(255,255,255,0.08)" }}
               />
             )}
@@ -50,347 +77,265 @@ function StepBar({ step }: { step: number }) {
   )
 }
 
-// ─── Step 1: Region ───────────────────────────────────────────────────────────
-
-function StepRegion({ onSelect }: { onSelect: (r: Region) => void }) {
+export function RegionGrid({ regions = REGIONS }: { regions?: Region[] }) {
   return (
-    <div>
-      <h2 className="font-sans font-extrabold text-2xl text-white mb-1">选择目的地</h2>
-      <p className="font-mono text-xs text-white/30 mb-8 tracking-wider">SELECT DESTINATION</p>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {REGIONS.map((r) => (
-          <button
-            key={r.id}
-            onClick={() => onSelect(r)}
-            className="group relative flex flex-col items-center gap-3 rounded-xl p-6 transition-all duration-200 hover:-translate-y-1 cursor-pointer text-left"
+    <ShopFrame
+      step={0}
+      breadcrumbItems={[{ label: "车型选购" }]}
+      title="选择目的地"
+      subtitle="SELECT DESTINATION"
+    >
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {regions.map((region) => (
+          <Link
+            key={region.id}
+            href={`/shop/${region.id}`}
+            className="group relative flex flex-col items-center gap-3 rounded-xl p-6 text-left transition-all duration-200 hover:-translate-y-1"
             style={{
               background: "rgba(0,0,0,0.6)",
-              border: `1px solid ${r.color}20`,
+              border: `1px solid ${region.color}20`,
               backdropFilter: "blur(16px)",
             }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = `${r.color}60`
-              ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 30px ${r.color}20`
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.borderColor = `${r.color}20`
-              ;(e.currentTarget as HTMLElement).style.boxShadow = "none"
-            }}
           >
-            <span className="text-4xl">{r.flag}</span>
+            <span className="font-mono text-2xl font-black tracking-widest" style={{ color: region.color }}>
+              {region.flag}
+            </span>
             <div className="text-center">
-              <p className="font-sans font-bold text-white text-lg leading-none">{r.name}</p>
-              <p className="font-mono text-[10px] tracking-widest mt-1" style={{ color: r.color }}>{r.nameEn}</p>
+              <p className="font-sans text-lg font-bold leading-none text-white">{region.name}</p>
+              <p className="mt-1 font-mono text-[10px] tracking-widest" style={{ color: region.color }}>
+                {region.nameEn}
+              </p>
             </div>
-            <p className="font-mono text-[10px] text-white/30 text-center leading-relaxed">{r.tagline}</p>
-            <div
-              className="flex items-center gap-1 font-mono text-[10px] font-semibold mt-1"
-              style={{ color: r.color }}
-            >
+            <p className="text-center font-mono text-[10px] leading-relaxed text-white/30">{region.tagline}</p>
+            <div className="mt-1 flex items-center gap-1 font-mono text-[10px] font-semibold" style={{ color: region.color }}>
               上车 <ChevronRight size={10} />
             </div>
-          </button>
+          </Link>
         ))}
       </div>
-    </div>
+    </ShopFrame>
   )
 }
 
-// ─── Step 2: Grade ────────────────────────────────────────────────────────────
-
-function StepGrade({ region, onSelect, onBack }: { region: Region; onSelect: (g: Grade) => void; onBack: () => void }) {
-  const availableVehicleGradeIds = new Set(
-    VEHICLES.filter(v => v.regionId === region.id).map(v => v.gradeId)
-  )
+export function GradeGrid({
+  region,
+  grades = GRADES,
+  availableGrades = GRADES.filter((grade) => grade.available),
+}: {
+  region: Region
+  grades?: Grade[]
+  availableGrades?: Grade[]
+}) {
+  const availableGradeIds = new Set(availableGrades.map((grade) => grade.id))
 
   return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-1.5 font-mono text-xs text-white/30 hover:text-white/70 transition-colors mb-6">
-        <ArrowLeft size={12} /> 返回目的地
-      </button>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-2xl">{region.flag}</span>
-        <h2 className="font-sans font-extrabold text-2xl text-white">{region.name} · 车辆级别</h2>
-      </div>
-      <p className="font-mono text-xs text-white/30 mb-8 tracking-wider">SELECT VEHICLE GRADE</p>
+    <ShopFrame
+      step={1}
+      backHref="/shop"
+      backLabel="返回目的地"
+      breadcrumbItems={[
+        { label: "车型选购", href: "/shop" },
+        { label: region.name },
+      ]}
+      eyebrow={
+        <span className="font-mono text-2xl font-black tracking-widest" style={{ color: region.color }}>
+          {region.flag}
+        </span>
+      }
+      title={`${region.name}路车辆级别`}
+      subtitle="SELECT VEHICLE GRADE"
+    >
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {grades.map((grade) => {
+          const clickable = availableGradeIds.has(grade.id)
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {GRADES.map((g) => {
-          const hasStock = availableVehicleGradeIds.has(g.id)
-          const clickable = hasStock
+          if (!clickable) {
+            return <GradeCard key={grade.id} grade={grade} disabled />
+          }
 
           return (
-            <button
-              key={g.id}
-              onClick={() => clickable && onSelect(g)}
-              disabled={!clickable}
-              className="relative flex flex-col rounded-xl p-5 transition-all duration-200 text-left"
-              style={{
-                background: clickable ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.3)",
-                border: `1px solid ${clickable ? g.color + "28" : "rgba(255,255,255,0.06)"}`,
-                backdropFilter: "blur(16px)",
-                opacity: clickable ? 1 : 0.4,
-                cursor: clickable ? "pointer" : "not-allowed",
-              }}
-              onMouseEnter={e => {
-                if (!clickable) return
-                ;(e.currentTarget as HTMLElement).style.borderColor = `${g.color}60`
-                ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 28px ${g.color}18`
-                ;(e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"
-              }}
-              onMouseLeave={e => {
-                if (!clickable) return
-                ;(e.currentTarget as HTMLElement).style.borderColor = `${g.color}28`
-                ;(e.currentTarget as HTMLElement).style.boxShadow = "none"
-                ;(e.currentTarget as HTMLElement).style.transform = "none"
-              }}
-            >
-              {!clickable && (
-                <span className="absolute top-3 right-3 font-mono text-[9px] text-white/20 tracking-widest border border-white/10 px-1.5 py-0.5 rounded">
-                  暂无车辆
-                </span>
-              )}
-              <span
-                className="font-mono font-extrabold text-5xl leading-none mb-3"
-                style={{ color: g.color, textShadow: clickable ? `0 0 24px ${g.color}50` : "none" }}
-              >
-                {g.label}
-              </span>
-              <p className="font-sans font-bold text-white text-base">{g.nameZh}</p>
-              <p className="font-mono text-[10px] tracking-widest mb-3" style={{ color: g.color }}>{g.subtitle}</p>
-              <p className="font-mono text-[10px] text-white/35 leading-relaxed mb-4">{g.desc}</p>
-              <div
-                className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-2.5 py-1 rounded self-start"
-                style={{
-                  color: g.fuelColor,
-                  background: `${g.fuelColor}12`,
-                  border: `1px solid ${g.fuelColor}30`,
-                }}
-              >
-                <Zap size={9} /> {g.fuel}
-              </div>
-            </button>
+            <GradeCard
+              key={grade.id}
+              grade={grade}
+              href={`/shop/${region.id}/${grade.id}`}
+            />
           )
         })}
       </div>
-    </div>
+    </ShopFrame>
   )
 }
 
-// ─── Seat occupancy badge ─────────────────────────────────────────────────────
-
-function SeatBadge({ occupied, max, gradeColor }: { occupied: number; max: number; gradeColor: string }) {
-  const isFull = occupied >= max
-  const available = max - occupied
-
-  // Color logic: full = red, 1 seat left = orange, otherwise grade color
-  const dotColor = isFull ? "#ff4444" : available === 1 ? "#ffb800" : gradeColor
-
+export function VehicleGrid({ region, grade, vehicles }: { region: Region; grade: Grade; vehicles: Vehicle[] }) {
   return (
-    <div
-      className="absolute top-3 right-3 flex flex-col items-end gap-1"
-    >
-      {/* Seat pip row */}
-      <div className="flex items-center gap-[3px]">
-        {Array.from({ length: max }).map((_, i) => (
-          <div
-            key={i}
-            className="w-[7px] h-[7px] rounded-sm transition-all duration-300"
-            style={{
-              background: i < occupied ? dotColor : "rgba(255,255,255,0.10)",
-              boxShadow: i < occupied ? `0 0 5px ${dotColor}90` : "none",
-            }}
-          />
-        ))}
-      </div>
-      {/* Label */}
-      <span
-        className="font-mono text-[9px] tracking-wider"
-        style={{ color: isFull ? "#ff4444" : "rgba(255,255,255,0.35)" }}
-      >
-        {isFull ? "已满员" : `还差 ${available} 人发车`}
-      </span>
-    </div>
-  )
-}
-
-// ─── Step 3: Vehicle model ────────────────────────────────────────────────────
-
-function StepVehicle({
-  region, grade, onSelect, onBack,
-}: {
-  region: Region
-  grade: Grade
-  onSelect: (v: Vehicle) => void
-  onBack: () => void
-}) {
-  const vehicles = VEHICLES.filter(v => v.regionId === region.id && v.gradeId === grade.id)
-
-  return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-1.5 font-mono text-xs text-white/30 hover:text-white/70 transition-colors mb-6">
-        <ArrowLeft size={12} /> 返回车辆级别
-      </button>
-      <div className="flex items-center gap-3 mb-1">
-        <span className="text-2xl">{region.flag}</span>
-        <span
-          className="font-mono font-extrabold text-3xl leading-none"
-          style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}
-        >
-          {grade.label}
-        </span>
-        <h2 className="font-sans font-extrabold text-2xl text-white">级 · 选择车型</h2>
-      </div>
-      <p className="font-mono text-xs text-white/30 mb-8 tracking-wider">SELECT MODEL</p>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {vehicles.map((v) => (
-          <button
-            key={v.id}
-            onClick={() => onSelect(v)}
-            className="relative flex flex-col rounded-xl overflow-hidden text-left transition-all duration-200"
-            style={{
-              background: "rgba(0,0,0,0.65)",
-              border: `1px solid ${grade.color}20`,
-              backdropFilter: "blur(16px)",
-            }}
-            onMouseEnter={e => {
-              ;(e.currentTarget as HTMLElement).style.borderColor = `${grade.color}55`
-              ;(e.currentTarget as HTMLElement).style.boxShadow = `0 0 32px ${grade.color}18`
-              ;(e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"
-            }}
-            onMouseLeave={e => {
-              ;(e.currentTarget as HTMLElement).style.borderColor = `${grade.color}20`
-              ;(e.currentTarget as HTMLElement).style.boxShadow = "none"
-              ;(e.currentTarget as HTMLElement).style.transform = "none"
-            }}
+    <ShopFrame
+      step={2}
+      backHref={`/shop/${region.id}`}
+      backLabel="返回车辆级别"
+      breadcrumbItems={[
+        { label: "车型选购", href: "/shop" },
+        { label: region.name, href: `/shop/${region.id}` },
+        { label: grade.nameZh },
+      ]}
+      eyebrow={
+        <>
+          <span className="font-mono text-2xl font-black tracking-widest" style={{ color: region.color }}>
+            {region.flag}
+          </span>
+          <span
+            className="font-mono text-3xl font-extrabold leading-none"
+            style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}
           >
-            {/* Seat occupancy badge — top-right corner */}
-            <SeatBadge occupied={v.occupiedSeats} max={v.maxSeats} gradeColor={grade.color} />
-
-            {v.badge && (
-              <span
-                className="absolute top-3 left-3 font-mono text-[10px] font-bold tracking-widest px-2 py-0.5 rounded"
-                style={{
-                  color: grade.color,
-                  background: `${grade.color}18`,
-                  border: `1px solid ${grade.color}40`,
-                  boxShadow: `0 0 8px ${grade.color}30`,
-                }}
-              >
-                {v.badge}
-              </span>
-            )}
-
-            {/* Top bar */}
-            <div className="px-5 pt-5 pb-4" style={{ borderBottom: `1px solid ${grade.color}12` }}>
-              <p
-                className="font-mono font-extrabold text-3xl leading-none mb-1"
-                style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}
-              >
-                {v.modelName}
-              </p>
-              <p className="font-mono text-[10px] tracking-widest text-white/30">{v.modelSub}</p>
-            </div>
-
-            {/* Config preview */}
-            <div className="px-5 py-4 flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-white/40 text-xs font-mono">
-                <Gauge size={11} />
-                <span>{v.configs[0].bandwidth}</span>
-                <span className="mx-1 text-white/15">·</span>
-                <span>{v.configs[0].route}</span>
-              </div>
-              <div className="flex items-center gap-2 text-white/40 text-xs font-mono">
-                <Users size={11} />
-                <span>{v.configs.length} 种拼车方案</span>
-                <span className="ml-auto font-bold" style={{ color: grade.color }}>
-                  ¥{Math.min(...v.configs.map(c => c.pricePerSeat))} 起 / Seat
-                </span>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div className="px-5 pb-5">
-              <div
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-semibold text-sm"
-                style={{
-                  background: `${grade.color}14`,
-                  border: `1px solid ${grade.color}35`,
-                  color: grade.color,
-                  boxShadow: `0 0 10px ${grade.color}15`,
-                }}
-              >
-                查看配置 <ChevronRight size={13} />
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
+            {grade.label}
+          </span>
+        </>
+      }
+      title={`${grade.nameZh} / 选择车型`}
+      subtitle="SELECT MODEL"
+    >
+      {vehicles.length > 0 ? (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {vehicles.map((vehicle) => (
+            <VehicleCard
+              key={vehicle.id}
+              grade={grade}
+              vehicle={vehicle}
+              href={`/shop/${region.id}/${grade.id}/${getVehicleSlug(vehicle)}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState href={`/shop/${region.id}`} label="这一档暂时没有可上车车型" />
+      )}
+    </ShopFrame>
   )
 }
 
-// ─── Step 4: Config ───────────────────────────────────────────────────────────
+export function VehicleDetail({ region, grade, vehicle }: { region: Region; grade: Grade; vehicle: Vehicle }) {
+  const recommendedConfig = vehicle.configs[0]
 
-function StepConfig({
-  region, grade, vehicle, onBack,
+  return (
+    <ShopFrame
+      step={3}
+      backHref={`/shop/${region.id}/${grade.id}`}
+      backLabel="返回车型"
+      breadcrumbItems={[
+        { label: "车型选购", href: "/shop" },
+        { label: region.name, href: `/shop/${region.id}` },
+        { label: grade.nameZh, href: `/shop/${region.id}/${grade.id}` },
+        { label: vehicle.modelName },
+      ]}
+      eyebrow={
+        <>
+          <span className="font-mono text-2xl font-black tracking-widest" style={{ color: region.color }}>
+            {region.flag}
+          </span>
+          <p className="font-mono text-3xl font-extrabold leading-none" style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}>
+            {vehicle.modelName}
+          </p>
+          {vehicle.badge && (
+            <span
+              className="rounded px-2 py-0.5 font-mono text-[10px] font-bold"
+              style={{ color: grade.color, background: `${grade.color}18`, border: `1px solid ${grade.color}40` }}
+            >
+              {vehicle.badge}
+            </span>
+          )}
+        </>
+      }
+      title="选择拼车配置"
+      subtitle={vehicle.modelSub}
+    >
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {vehicle.configs.map((config) => (
+            <ConfigCard
+              key={config.id}
+              config={config}
+              grade={grade}
+              href={`/shop/${region.id}/${grade.id}/${getVehicleSlug(vehicle)}/${config.id}`}
+            />
+          ))}
+        </div>
+
+        <VehicleSummary region={region} grade={grade} vehicle={vehicle} config={recommendedConfig} />
+      </div>
+    </ShopFrame>
+  )
+}
+
+export function ConfigCheckout({
+  region,
+  grade,
+  vehicle,
+  config,
+  backHref,
+  backLabel,
+  includeConfigBreadcrumb = true,
 }: {
   region: Region
   grade: Grade
   vehicle: Vehicle
-  onBack: () => void
+  config: Config
+  backHref?: string
+  backLabel?: string
+  includeConfigBreadcrumb?: boolean
 }) {
-  const cfg = vehicle.configs[0]
-  const availableSeats = vehicle.maxSeats - vehicle.occupiedSeats
+  const availableSeats = Math.max(0, vehicle.maxSeats - vehicle.occupiedSeats)
   const maxBuy = Math.max(1, availableSeats)
+  const [seatInput, setSeatInput] = useState("1")
 
-  const [seatInput, setSeatInput] = useState<string>("1")
+  const seatCount = Math.min(Math.max(1, Number.parseInt(seatInput, 10) || 1), maxBuy)
+  const totalPrice = seatCount * config.pricePerSeat
 
-  const seatCount = Math.min(Math.max(1, parseInt(seatInput) || 1), maxBuy)
-  const totalPrice = seatCount * cfg.pricePerSeat
-
-  function handleSeatChange(val: string) {
-    // Allow empty string while typing, or digits only
-    if (val === "" || /^\d{1,2}$/.test(val)) setSeatInput(val)
+  function handleSeatChange(value: string) {
+    if (value === "" || /^\d{1,2}$/.test(value)) setSeatInput(value)
   }
 
   function handleSeatBlur() {
-    const n = Math.min(Math.max(1, parseInt(seatInput) || 1), maxBuy)
-    setSeatInput(String(n))
+    setSeatInput(String(seatCount))
   }
 
   return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-1.5 font-mono text-xs text-white/30 hover:text-white/70 transition-colors mb-6">
-        <ArrowLeft size={12} /> 返回车型
-      </button>
-
-      {/* Title */}
-      <div className="flex items-center gap-3 mb-1">
-        <span className="text-2xl">{region.flag}</span>
-        <p className="font-mono font-extrabold text-3xl leading-none" style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}>
-          {vehicle.modelName}
-        </p>
-        {vehicle.badge && (
-          <span
-            className="font-mono text-[10px] font-bold px-2 py-0.5 rounded"
-            style={{ color: grade.color, background: `${grade.color}18`, border: `1px solid ${grade.color}40` }}
-          >
-            {vehicle.badge}
+    <ShopFrame
+      step={3}
+      backHref={backHref ?? `/shop/${region.id}/${grade.id}/${getVehicleSlug(vehicle)}`}
+      backLabel={backLabel ?? "返回配置"}
+      breadcrumbItems={
+        includeConfigBreadcrumb
+          ? [
+              { label: "车型选购", href: "/shop" },
+              { label: region.name, href: `/shop/${region.id}` },
+              { label: grade.nameZh, href: `/shop/${region.id}/${grade.id}` },
+              { label: vehicle.modelName, href: `/shop/${region.id}/${grade.id}/${getVehicleSlug(vehicle)}` },
+              { label: config.label },
+            ]
+          : [
+              { label: "车型选购", href: "/shop" },
+              { label: region.name, href: `/shop/${region.id}` },
+              { label: grade.nameZh, href: `/shop/${region.id}/${grade.id}` },
+              { label: vehicle.modelName },
+            ]
+      }
+      eyebrow={
+        <>
+          <span className="font-mono text-2xl font-black tracking-widest" style={{ color: region.color }}>
+            {region.flag}
           </span>
-        )}
-      </div>
-      <p className="font-mono text-[10px] tracking-widest text-white/30 mb-8">{vehicle.modelSub}</p>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: seat quantity input */}
+          <p className="font-mono text-3xl font-extrabold leading-none" style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}>
+            {vehicle.modelName}
+          </p>
+        </>
+      }
+      title={includeConfigBreadcrumb ? config.label : "按 Seat 购买"}
+      subtitle={vehicle.modelSub}
+    >
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div>
-          <p className="font-mono text-xs text-white/40 tracking-widest mb-4 uppercase">购买 Seat 数量</p>
+          <p className="mb-4 font-mono text-xs uppercase tracking-widest text-white/40">购买 Seat 数量</p>
 
-          {/* Seat availability visual */}
           <div
-            className="rounded-xl px-5 py-4 mb-5 flex items-center justify-between"
+            className="mb-5 flex items-center justify-between rounded-xl px-5 py-4"
             style={{
               background: "rgba(0,0,0,0.5)",
               border: `1px solid ${grade.color}20`,
@@ -399,66 +344,42 @@ function StepConfig({
           >
             <div className="flex flex-col gap-1.5">
               <span className="font-mono text-xs text-white/40">当前车辆座位</span>
-              <div className="flex items-center gap-[5px] mt-1">
-                {Array.from({ length: vehicle.maxSeats }).map((_, i) => {
-                  const isOccupied = i < vehicle.occupiedSeats
-                  const isYours = !isOccupied && i < vehicle.occupiedSeats + seatCount
-                  const dotColor = isYours ? grade.color : isOccupied ? "rgba(255,255,255,0.20)" : "rgba(255,255,255,0.08)"
-                  return (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200"
-                      style={{
-                        background: isYours ? `${grade.color}22` : isOccupied ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${dotColor}`,
-                        boxShadow: isYours ? `0 0 10px ${grade.color}40` : "none",
-                      }}
-                      title={isOccupied ? "已有乘客" : isYours ? "你的座位" : "空位"}
-                    >
-                      <Users
-                        size={13}
-                        style={{ color: isYours ? grade.color : isOccupied ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.10)" }}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
+              <SeatRow vehicle={vehicle} grade={grade} selectedSeats={seatCount} />
             </div>
-            <div className="text-right flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 text-right">
               <span className="font-mono text-[10px] text-white/25">可购</span>
-              <span className="font-mono font-bold text-2xl" style={{ color: grade.color }}>{maxBuy}</span>
+              <span className="font-mono text-2xl font-bold" style={{ color: grade.color }}>{availableSeats}</span>
               <span className="font-mono text-[10px] text-white/25">Seat</span>
             </div>
           </div>
 
-          {/* Input row */}
           <div
-            className="rounded-xl px-5 py-4 flex items-center gap-5"
+            className="flex items-center gap-5 rounded-xl px-5 py-4"
             style={{
               background: "rgba(0,0,0,0.5)",
               border: `1px solid ${grade.color}30`,
               backdropFilter: "blur(12px)",
             }}
           >
-            <div className="flex flex-col gap-1 flex-1">
-              <label className="font-mono text-[10px] text-white/35 tracking-wider">输入 Seat 数量（1 – {maxBuy}）</label>
+            <div className="flex flex-1 flex-col gap-1">
+              <label className="font-mono text-[10px] tracking-wider text-white/35">输入 Seat 数量，1 - {maxBuy}</label>
               <input
                 type="text"
                 inputMode="numeric"
                 value={seatInput}
-                onChange={e => handleSeatChange(e.target.value)}
                 onBlur={handleSeatBlur}
-                className="w-full font-mono text-2xl font-bold bg-transparent outline-none caret-current"
+                onChange={(event) => handleSeatChange(event.target.value)}
+                className="w-full bg-transparent font-mono text-2xl font-bold caret-current outline-none"
                 style={{ color: grade.color }}
-                maxLength={1}
+                maxLength={2}
               />
             </div>
-            {/* Stepper buttons */}
             <div className="flex flex-col gap-1.5">
               <button
+                type="button"
                 onClick={() => setSeatInput(String(Math.min(seatCount + 1, maxBuy)))}
                 disabled={seatCount >= maxBuy}
-                className="w-8 h-8 rounded-lg font-bold text-lg flex items-center justify-center transition-all duration-150 disabled:opacity-20"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-lg font-bold transition-all duration-150 disabled:opacity-20"
                 style={{
                   background: `${grade.color}18`,
                   border: `1px solid ${grade.color}35`,
@@ -468,125 +389,365 @@ function StepConfig({
                 +
               </button>
               <button
+                type="button"
                 onClick={() => setSeatInput(String(Math.max(seatCount - 1, 1)))}
                 disabled={seatCount <= 1}
-                className="w-8 h-8 rounded-lg font-bold text-lg flex items-center justify-center transition-all duration-150 disabled:opacity-20"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-lg font-bold transition-all duration-150 disabled:opacity-20"
                 style={{
                   background: `${grade.color}18`,
                   border: `1px solid ${grade.color}35`,
                   color: grade.color,
                 }}
               >
-                −
+                -
               </button>
             </div>
           </div>
 
-          {/* Unit price hint */}
-          <p className="font-mono text-[10px] text-white/25 mt-3 tracking-wider">
-            单价 ¥{cfg.pricePerSeat} / Seat · 每车最多 {vehicle.maxSeats} Seat
+          <p className="mt-3 font-mono text-[10px] tracking-wider text-white/25">
+            单价 ¥{config.pricePerSeat} / Seat / 月 · 每车最大 {vehicle.maxSeats} Seat
           </p>
         </div>
 
-        {/* Right: specs + CTA */}
-        <div
-          className="rounded-xl p-6 flex flex-col gap-5"
-          style={{
-            background: "rgba(0,0,0,0.65)",
-            border: `1px solid ${grade.color}20`,
-            backdropFilter: "blur(16px)",
-          }}
-        >
-          <p className="font-mono text-xs text-white/40 tracking-widest uppercase">车辆配置详情</p>
-
-          {/* Spec rows */}
-          {[
-            { label: "带宽", value: cfg.bandwidth },
-            { label: "线路", value: cfg.route },
-            { label: "流量", value: cfg.traffic },
-            { label: "燃油型号", value: GRADES.find(g => g.id === grade.id)?.fuel ?? "" },
-            { label: "目的地", value: `${region.flag} ${region.name}` },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex items-start justify-between gap-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: "0.75rem" }}>
-              <span className="font-mono text-xs text-white/30 shrink-0">{label}</span>
-              <span className="font-mono text-xs text-white/75 text-right">{value}</span>
-            </div>
-          ))}
-
-          {/* Price summary */}
-          <div
-            className="rounded-lg px-4 py-3 flex items-center justify-between"
-            style={{ background: `${grade.color}0a`, border: `1px solid ${grade.color}25` }}
-          >
-            <div className="flex flex-col gap-0.5">
-              <span className="font-mono text-xs text-white/40">本次上车费用</span>
-              <span className="font-mono text-[10px] text-white/25">
-                {seatCount} Seat × ¥{cfg.pricePerSeat}
-              </span>
-            </div>
-            <span
-              className="font-mono font-extrabold text-2xl"
-              style={{ color: grade.color, textShadow: `0 0 14px ${grade.color}50` }}
-            >
-              ¥{totalPrice}
-              <span className="text-sm font-normal text-white/30 ml-1">/ 月</span>
-            </span>
-          </div>
-
-          {/* CTA */}
-          <button
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
-            style={{
-              background: grade.color,
-              color: "#000",
-              boxShadow: `0 0 24px ${grade.color}50`,
-            }}
-          >
-            立即上车 {seatCount > 1 ? `· ${seatCount} Seat` : ""} <ArrowRight size={15} />
-          </button>
-
-          <p className="font-mono text-[10px] text-white/20 text-center leading-relaxed">
-            人满自动发车 · 支持月付 · 跳车不退款
-          </p>
-        </div>
+        <VehicleSummary
+          region={region}
+          grade={grade}
+          vehicle={vehicle}
+          config={config}
+          seatCount={seatCount}
+          totalPrice={totalPrice}
+        />
       </div>
+    </ShopFrame>
+  )
+}
+
+function ShopFrame({
+  step,
+  backHref,
+  backLabel,
+  breadcrumbItems,
+  eyebrow,
+  title,
+  subtitle,
+  children,
+}: {
+  step: number
+  backHref?: string
+  backLabel?: string
+  breadcrumbItems: BreadcrumbItem[]
+  eyebrow?: React.ReactNode
+  title: string
+  subtitle: string
+  children: React.ReactNode
+}) {
+  return (
+    <section id="vehicles" className="mx-auto max-w-6xl px-6 pb-24">
+      <StepBar step={step} />
+      <ShopBreadcrumb items={breadcrumbItems} />
+
+      {backHref && backLabel && (
+        <Link href={backHref} className="mb-6 flex items-center gap-1.5 font-mono text-xs text-white/30 transition-colors hover:text-white/70">
+          <ArrowLeft size={12} /> {backLabel}
+        </Link>
+      )}
+
+      <div className="mb-8">
+        {eyebrow && <div className="mb-1 flex items-center gap-3">{eyebrow}</div>}
+        <h2 className="font-sans text-2xl font-extrabold text-white">{title}</h2>
+        <p className="mt-1 font-mono text-xs tracking-wider text-white/30">{subtitle}</p>
+      </div>
+
+      {children}
+
+      <div className="mt-14 flex justify-center">
+        <Link href="/" className="font-mono text-xs tracking-widest text-white/25 transition-colors hover:text-white/60">
+          ← 返回首页
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+function GradeCard({ grade, href, disabled = false }: { grade: Grade; href?: string; disabled?: boolean }) {
+  const content = (
+    <>
+      {disabled && (
+        <span className="absolute right-3 top-3 rounded border border-white/10 px-1.5 py-0.5 font-mono text-[9px] tracking-widest text-white/20">
+          暂无车辆
+        </span>
+      )}
+      <span
+        className="mb-3 font-mono text-5xl font-extrabold leading-none"
+        style={{ color: grade.color, textShadow: disabled ? "none" : `0 0 24px ${grade.color}50` }}
+      >
+        {grade.label}
+      </span>
+      <p className="font-sans text-base font-bold text-white">{grade.nameZh}</p>
+      <p className="mb-3 font-mono text-[10px] tracking-widest" style={{ color: grade.color }}>{grade.subtitle}</p>
+      <p className="mb-4 font-mono text-[10px] leading-relaxed text-white/35">{grade.desc}</p>
+      <div
+        className="inline-flex items-center gap-1 self-start rounded px-2.5 py-1 font-mono text-[10px] font-bold"
+        style={{
+          color: grade.fuelColor,
+          background: `${grade.fuelColor}12`,
+          border: `1px solid ${grade.fuelColor}30`,
+        }}
+      >
+        <Zap size={9} /> {grade.fuel}
+      </div>
+    </>
+  )
+
+  const className = "relative flex flex-col rounded-xl p-5 text-left transition-all duration-200 hover:-translate-y-0.5"
+  const style = {
+    background: disabled ? "rgba(0,0,0,0.3)" : "rgba(0,0,0,0.6)",
+    border: `1px solid ${disabled ? "rgba(255,255,255,0.06)" : grade.color + "28"}`,
+    backdropFilter: "blur(16px)",
+    opacity: disabled ? 0.4 : 1,
+  }
+
+  if (!href || disabled) {
+    return <div className={className} style={style}>{content}</div>
+  }
+
+  return <Link href={href} className={className} style={style}>{content}</Link>
+}
+
+function SeatBadge({ occupied, max, gradeColor }: { occupied: number; max: number; gradeColor: string }) {
+  const isFull = occupied >= max
+  const available = max - occupied
+  const dotColor = isFull ? "#ff4444" : available === 1 ? "#ffb800" : gradeColor
+
+  return (
+    <div className="absolute right-5 top-5 flex flex-col items-end gap-1">
+      <div className="flex items-center gap-[3px]">
+        {Array.from({ length: max }).map((_, i) => (
+          <div
+            key={i}
+            className="h-[7px] w-[7px] rounded-sm transition-all duration-300"
+            style={{
+              background: i < occupied ? dotColor : "rgba(255,255,255,0.10)",
+              boxShadow: i < occupied ? `0 0 5px ${dotColor}90` : "none",
+            }}
+          />
+        ))}
+      </div>
+      <span className="font-mono text-[9px] tracking-wider" style={{ color: isFull ? "#ff4444" : "rgba(255,255,255,0.35)" }}>
+        {isFull ? "已满员" : `还差 ${available} 人发车`}
+      </span>
     </div>
   )
 }
 
-// ─── Main orchestrator ────────────────────────────────────────────────────────
-
-export function VehicleSelector() {
-  const [step, setStep] = useState(0)
-  const [region, setRegion] = useState<Region | null>(null)
-  const [grade, setGrade] = useState<Grade | null>(null)
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null)
-
-  function selectRegion(r: Region) { setRegion(r); setStep(1) }
-  function selectGrade(g: Grade) { setGrade(g); setStep(2) }
-  function selectVehicle(v: Vehicle) { setVehicle(v); setStep(3) }
-
-  function goBack() {
-    if (step === 1) { setRegion(null); setStep(0) }
-    if (step === 2) { setGrade(null); setStep(1) }
-    if (step === 3) { setVehicle(null); setStep(2) }
-  }
+function VehicleCard({ grade, vehicle, href }: { grade: Grade; vehicle: Vehicle; href: string }) {
+  const minPrice = Math.min(...vehicle.configs.map((config) => config.pricePerSeat))
 
   return (
-    <section className="px-6 pb-24 max-w-6xl mx-auto">
-      <StepBar step={step} />
+    <Link
+      href={href}
+      className="relative flex min-h-[280px] flex-col overflow-hidden rounded-xl text-left transition-all duration-200 hover:-translate-y-0.5"
+      style={{
+        background: "rgba(0,0,0,0.65)",
+        border: `1px solid ${grade.color}20`,
+        backdropFilter: "blur(16px)",
+      }}
+    >
+      <SeatBadge occupied={vehicle.occupiedSeats} max={vehicle.maxSeats} gradeColor={grade.color} />
 
-      {step === 0 && <StepRegion onSelect={selectRegion} />}
-      {step === 1 && region && <StepGrade region={region} onSelect={selectGrade} onBack={goBack} />}
-      {step === 2 && region && grade && <StepVehicle region={region} grade={grade} onSelect={selectVehicle} onBack={goBack} />}
-      {step === 3 && region && grade && vehicle && <StepConfig region={region} grade={grade} vehicle={vehicle} onBack={goBack} />}
+      {vehicle.badge && (
+        <span
+          className="absolute left-5 top-5 rounded px-2 py-0.5 font-mono text-[10px] font-bold tracking-widest"
+          style={{
+            color: grade.color,
+            background: `${grade.color}18`,
+            border: `1px solid ${grade.color}40`,
+            boxShadow: `0 0 8px ${grade.color}30`,
+          }}
+        >
+          {vehicle.badge}
+        </span>
+      )}
 
-      {/* Back to homepage */}
-      <div className="mt-14 flex justify-center">
-        <Link href="/" className="font-mono text-xs text-white/25 hover:text-white/60 transition-colors tracking-widest">
-          &larr; 返回首页
-        </Link>
+      <div className="min-h-[116px] px-5 pb-5 pt-14" style={{ borderBottom: `1px solid ${grade.color}12` }}>
+        <p className="mb-1 font-mono text-3xl font-extrabold leading-none" style={{ color: grade.color, textShadow: `0 0 18px ${grade.color}50` }}>
+          {vehicle.modelName}
+        </p>
+        <p className="font-mono text-[10px] tracking-widest text-white/30">{vehicle.modelSub}</p>
       </div>
-    </section>
+
+      <div className="flex flex-1 flex-col gap-2 px-5 py-5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-white/40">
+          <Gauge size={11} />
+          <span>{vehicle.configs[0]?.bandwidth}</span>
+          <span className="mx-1 text-white/15">·</span>
+          <span>{vehicle.configs[0]?.route}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs text-white/40">
+          <Users size={11} />
+          <span>{vehicle.configs.length} 种拼车方案</span>
+          <span className="ml-auto font-bold" style={{ color: grade.color }}>
+            ¥{minPrice} 起 / Seat
+          </span>
+        </div>
+      </div>
+
+      <div className="px-5 pb-5">
+        <div
+          className="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold"
+          style={{
+            background: `${grade.color}14`,
+            border: `1px solid ${grade.color}35`,
+            color: grade.color,
+            boxShadow: `0 0 10px ${grade.color}15`,
+          }}
+        >
+          查看配置 <ChevronRight size={13} />
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function ConfigCard({ config, grade, href }: { config: Config; grade: Grade; href: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex min-h-56 flex-col rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5"
+      style={{
+        background: "rgba(0,0,0,0.6)",
+        border: `1px solid ${grade.color}24`,
+        backdropFilter: "blur(16px)",
+      }}
+    >
+      <p className="font-sans text-lg font-bold text-white">{config.label}</p>
+      <p className="mt-1 font-mono text-[10px] tracking-widest text-white/30">
+        {config.note ?? `${config.seats} Seat 方案`}
+      </p>
+      <div className="my-5 flex flex-col gap-2 font-mono text-xs text-white/45">
+        <span>{config.bandwidth}</span>
+        <span>{config.route}</span>
+        <span>{config.traffic}</span>
+      </div>
+      <div className="mt-auto flex items-end justify-between gap-4">
+        <span className="font-mono text-[10px] text-white/30">单 Seat / 月</span>
+        <span className="font-mono text-2xl font-extrabold" style={{ color: grade.color }}>
+          ¥{config.pricePerSeat}
+        </span>
+      </div>
+    </Link>
+  )
+}
+
+function SeatRow({ vehicle, grade, selectedSeats }: { vehicle: Vehicle; grade: Grade; selectedSeats: number }) {
+  return (
+    <div className="mt-1 flex items-center gap-[5px]">
+      {Array.from({ length: vehicle.maxSeats }).map((_, i) => {
+        const isOccupied = i < vehicle.occupiedSeats
+        const isSelected = !isOccupied && i < vehicle.occupiedSeats + selectedSeats
+        const dotColor = isSelected ? grade.color : isOccupied ? "rgba(255,255,255,0.20)" : "rgba(255,255,255,0.08)"
+
+        return (
+          <div
+            key={i}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200"
+            style={{
+              background: isSelected ? `${grade.color}22` : isOccupied ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
+              border: `1px solid ${dotColor}`,
+              boxShadow: isSelected ? `0 0 10px ${grade.color}40` : "none",
+            }}
+            title={isOccupied ? "已有乘客" : isSelected ? "你的座位" : "空位"}
+          >
+            <Users
+              size={13}
+              style={{ color: isSelected ? grade.color : isOccupied ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.10)" }}
+            />
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function VehicleSummary({
+  region,
+  grade,
+  vehicle,
+  config,
+  seatCount = 1,
+  totalPrice,
+}: {
+  region: Region
+  grade: Grade
+  vehicle: Vehicle
+  config: Config
+  seatCount?: number
+  totalPrice?: number
+}) {
+  const computedTotal = totalPrice ?? seatCount * config.pricePerSeat
+
+  return (
+    <div
+      className="flex flex-col gap-5 rounded-xl p-6"
+      style={{
+        background: "rgba(0,0,0,0.65)",
+        border: `1px solid ${grade.color}20`,
+        backdropFilter: "blur(16px)",
+      }}
+    >
+      <p className="font-mono text-xs uppercase tracking-widest text-white/40">车辆配置详情</p>
+
+      {[
+        { label: "车型", value: vehicle.modelName },
+        { label: "带宽", value: config.bandwidth },
+        { label: "线路", value: config.route },
+        { label: "流量", value: config.traffic },
+        { label: "燃油型号", value: grade.fuel },
+        { label: "目的地", value: `${region.flag} ${region.name}` },
+      ].map(({ label, value }) => (
+        <div key={label} className="flex items-start justify-between gap-4 border-b border-white/[0.04] pb-3">
+          <span className="shrink-0 font-mono text-xs text-white/30">{label}</span>
+          <span className="text-right font-mono text-xs text-white/75">{value}</span>
+        </div>
+      ))}
+
+      <div className="flex items-center justify-between rounded-lg px-4 py-3" style={{ background: `${grade.color}0a`, border: `1px solid ${grade.color}25` }}>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-mono text-xs text-white/40">本次上车费用</span>
+          <span className="font-mono text-[10px] text-white/25">{seatCount} Seat × ¥{config.pricePerSeat}</span>
+        </div>
+        <span className="font-mono text-2xl font-extrabold" style={{ color: grade.color, textShadow: `0 0 14px ${grade.color}50` }}>
+          ¥{computedTotal}
+          <span className="ml-1 text-sm font-normal text-white/30">/ 月</span>
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all duration-200 hover:brightness-110 active:scale-[0.98]"
+        style={{
+          background: grade.color,
+          color: "#000",
+          boxShadow: `0 0 24px ${grade.color}50`,
+        }}
+      >
+        立刻上车 {seatCount > 1 ? `· ${seatCount} Seat` : ""} <ArrowRight size={15} />
+      </button>
+
+      <p className="text-center font-mono text-[10px] leading-relaxed text-white/20">
+        人满自动发车 · 支持月付 · 跳车不退款
+      </p>
+    </div>
+  )
+}
+
+function EmptyState({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/50 p-8 text-center">
+      <p className="font-mono text-sm text-white/45">{label}</p>
+      <Link href={href} className="mt-4 inline-flex items-center gap-2 font-mono text-xs text-[#ff2d78]">
+        返回上一层 <ArrowRight size={12} />
+      </Link>
+    </div>
   )
 }

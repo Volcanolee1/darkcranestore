@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Region {
+  id        String    @id
+  name      String
+  nameEn    String
+  flag      String
+  tagline   String
+  color     String
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  vehicles  Vehicle[]
+
+  @@map("regions")
+}
+
+model Grade {
+  id        String    @id
+  label     String
+  nameZh    String
+  subtitle  String
+  fuel      String
+  fuelColor String
+  desc      String
+  color     String
+  available Boolean   @default(true)
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  vehicles  Vehicle[]
+
+  @@map("grades")
+}
+
+model Vehicle {
+  id            String          @id
+  regionId      String
+  gradeId       String
+  modelName     String
+  modelSub      String
+  badge         String?
+  occupiedSeats Int             @default(0)
+  maxSeats      Int             @default(4)
+  sortOrder     Int             @default(0)
+  isPublished   Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  region        Region          @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  grade         Grade           @relation(fields: [gradeId], references: [id], onDelete: Restrict)
+  configs       VehicleConfig[]
+
+  @@index([regionId])
+  @@index([gradeId])
+  @@index([regionId, gradeId])
+  @@map("vehicles")
+}
+
+model VehicleConfig {
+  uid          String   @id @default(cuid())
+  vehicleId    String
+  code         String
+  label        String
+  bandwidth    String
+  route        String
+  traffic      String
+  seats        Int
+  pricePerSeat Int
+  totalSeats   Int
+  note         String?
+  sortOrder    Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([vehicleId, code])
+  @@index([vehicleId])
+  @@map("vehicle_configs")
+}
